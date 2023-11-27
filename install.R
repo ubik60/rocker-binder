@@ -1,3 +1,5 @@
+    install.packages("markdown")
+    install.packages("tinytex")
     install.packages("tidyverse")
     install.packages("flextable")
     install.packages("remotes")

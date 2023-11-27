@@ -1,1 +1,4 @@
-vim
+wget
+graphviz
+texlive-latex-extra
+lmodern
