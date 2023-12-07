@@ -4,3 +4,4 @@
     install.packages("flextable")
     install.packages("remotes")
     remotes::install_github(repo = "speegled/fosdata")
+    tinytex::install_tinytex(TRUE)
