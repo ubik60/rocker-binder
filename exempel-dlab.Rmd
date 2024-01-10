@@ -1,5 +1,5 @@
 ---
-title: " t-test"
+title: "Exempelblad dör datalab"
 author: "Anders Johansson"
 date: '2020-09-30'
 output: html_document
@@ -8,9 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(flextable)
-library(gridExtra)
-library(data.table)
 library(fosdata)
+
 knitr::opts_chunk$set(echo = TRUE,warning= FALSE)
 theme_set(theme_light())
 set_flextable_defaults(digits=4,theme_fun = theme_zebra)
@@ -23,71 +22,82 @@ Följande arbetsblad innehåller lite blandade och oredigerade anteckningar för
 
 # T-test för skillnad mellan två medel
 
-Dataset `cigs` från fosdatapaketet innehåller mätningar av cigarettmärken som testades av U.S. Federal Trade Commission för kemikalieinnehåll. 
+8.29 Cigaretter
 
-Kontrollera med en lämplig plot att variablerna som anger 
-  nikotinhalt (`nic`)  och tjärhalt (`tar`) är rimligt symmetriska. 
+The data set cigs from the fosdata package contains measurements of cigarette brands that were tested by the U.S. Federal Trade Commission for chemical content. Check with a plot that the nicotine (nic) and tar variables are reasonably bump shaped and symmetric, without major outliers.
 
-- Testa för skillnad i nikotinhalt mellan de filtrerade och
-  ofiltrerade cigarettmärkena. Ange ditt resultat med ett p-värde.
-  Gör samma sak för skillnaden i tjärhalt.
+- Test for a difference in nicotine content between filtered and unfiltered cigarette brands.  State your result with a p-value.
+- Test for a difference in tar content between filtered and unfiltered cigarette brands. State  your result with a p-value.
+- Test for a difference in nicotine content between menthol and non-menthol cigarette brands.  State your result with a p-value.
+- Test for a difference in tar content between menthol and non-menthol cigarette brands. State  your result with a p-value.
 
 
 
 ```{r}
-df <- fosdata::cigs   # Remove missing values
-df %>% head()
+cigs <- fosdata::cigs   # Remove missing values
+cigs %>% sample_n(10)
 ```
 
+Boxplot av nikotinhalt filter/icke-filter
 
 ```{r}
-group_by(df,filter) %>% 
-  summarise(nicmean=mean(nic,na.rm=T), tarmean=mean(tar,na.rm=T), n=n(), nmissing = sum(is.na(nic)), tmissing= sum(is.na(tar))) %>% 
-  flextable()
-```
-
-```{r}
-df %>%
-  ggplot(aes(x=filter,y=nic)) +
-  geom_boxplot() 
-```
-```{r}
-df %>%
-  ggplot(aes(x=nic,fill=filter)) +
-  geom_histogram(bins=15,position="dodge") ->pl_hist_nic
-df %>%
-  ggplot(aes(x=tar,fill=filter)) +
-  geom_histogram(bins=15,position="dodge") ->pl_hist_tar
-grid.arrange(pl_hist_nic,pl_hist_tar)
-```
-
-```{r}
-grid.arrange(
-df %>%
-  ggplot(aes(x=filter,y=tar,fill=filter)) +
-  geom_boxplot() +
-  theme(legend.position="none"),
-
-df %>%
+cigs %>% 
   ggplot(aes(x=filter,y=nic,fill=filter)) +
-  geom_boxplot() + 
-  theme(legend.position="none")
-)
-
+  geom_boxplot()
 ```
-
-
-
+Tjärhalt (`tar`)
 ```{r}
-t.test(tar ~ filter,data=df,conf.level=0.95)
-```
-
-```{r}
-t.test(nic ~ filter,data=df,conf.level=0.95)
+cigs %>% 
+  ggplot(aes(x=filter,y=tar,fill=filter)) +
+  geom_boxplot()
 ```
 ```{r}
-t.test(tar ~ filter,data=df,conf.level=0.95)
+cigs %>% ggplot(aes(sample=nic,color=filter)) +
+  geom_qq()
 ```
+
+```{r}
+t.test(nic ~ filter,data=cigs,conf.level=0.95)
+```
+
+Kolla normalfördelningsantagandet
+```{r}
+cigs %>% ggplot(aes(sample=tar,color=filter)) +
+  geom_qq()
+```
+Kommentar: Ej troligt normalfördelningsantagandet gäller. 
+
+```{r}
+t.test(tar ~ filter,data=cigs,conf.level=0.95)
+```
+
+## 8.28 Benstyrka 
+Detta är ett exempel på “stickprov i par” vilket egentligen betyder att man behandlar det som ett stickprov där differenserna.
+
+Experimenters measured the leg strength of adults using two methods: a stationary isometric dynamometer and a Wii Balance Board. The strength (in kg) of each adult is reported in fosdata::leg_strength.
+
+Test for a difference in the mean leg strength as measured with these two devices.
+
+```{r}
+leg_strength <- fosdata::leg_strength
+
+leg_strength %>% sample_n(10)
+```
+```{r}
+leg2 <- leg_strength %>% mutate(differens=mean_wii-mean_sid) 
+leg2
+```
+
+```{r}
+leg2 %>% ggplot(aes(sample=differens)) +
+  geom_qq() +
+  geom_qq_line()
+```
+
+```{r}
+t.test(leg2$differens)
+```
+
 
 # Chi-två test
 
@@ -102,35 +112,11 @@ freedom will need to be adjusted appropriately.
 Läs in data i `df1`.
 
 ```{r}
-df1 <- mutate(normtemp, gender=ifelse(gender == 1, "M","F")) %>% select(gender,temp)
-flextable(head(df1,10))
+df1 <- mutate(fosdata::normtemp, gender=ifelse(gender == 1, "M","F"))
+df1 %>% sample_n(20)
+nrow(df1)
 ```
 
-```{r}
-
-```
-
-```{r}
-
-```
-
-Kollar om det finns tydlig skillnad mellan `M` och `F` ...
-
-```{r}
-ggplot(df1,aes(x=temp,fill=gender)) +
-  geom_histogram(bins=10) +
-  facet_wrap(vars(gender))
-```
-
-Kollar normalfördelningsantgandet med en qq-plot
-
-```{r}
-ggplot(df1,aes(sample=temp)) +
-  geom_qq(color="blue") +
-  geom_qq_line()
-```
-
-Pga avrundning har vi litet "trappstegsform".
 
 Vi försöker undersöka en normalmodell $N(\mu,\sigma)$ : Skattar $\mu$
 och $\sigma$ från data.
@@ -143,41 +129,27 @@ sd1 <- sd(df1$temp)
 ```{r}
 p <- ggplot(df1,aes(x=temp)) +
   geom_histogram(aes(y=..density..),bins=15,fill="steelblue",alpha=0.5) +
-  geom_function(fun = function(x) dnorm(x,mean=mu1,sd=sd1))
+  geom_function(fun=function(x) dnorm(x,mean=mu1,sd=sd1))
 p
 ```
 
+
 ```{r}
-n0 <- 130
-p0 <- 0.1 # slh per kategori 
-pcuts <- seq(0.1,0.9,by=0.1)
-pcuts
+breaks <- c(0,qnorm(seq(0.1,0.9,by=0.1),mean=mu1,sd = sd1),1000)
+breaks
 ```
 
-```{r}
-breaks <- qnorm(pcuts,mean=mu1,sd = sd1)
-```
 
 ```{r}
-p + 
-  geom_vline(data=tibble(x=breaks[2:10]),aes(xintercept=x))
-
-```
-
-En tabell där alla kategorier ingår. (Spöktabell)
-
-```{r}
-catdf <- tibble(temp=seq(95,105,by=0.05),category=cut(temp,breaks=breaks),count=0)
-```
-
-```{r}
-select(df1,temp) %>% 
+df1 %>% 
   mutate(category=cut(temp,breaks),count=1) %>% 
-  bind_rows(catdf) %>% # Lägger till 
   group_by(category) %>%
-  summarise(O=sum(count),E=n0*p0) %>% ungroup() -> counts
-flextable(counts)
+  summarise(O=sum(count),E=0.1*nrow(df1)) %>% ungroup() -> counts
+counts 
 ```
+
+
+
 
 Vi måste justera p-värdet eftersom vi skall använda $\nu=10-1-2$
 frhetsgrader. (2 Skattade parametrar.) Vi beräknar här nere $\chi^2$
@@ -185,22 +157,16 @@ värdet direkt.
 
 ```{r}
 chi <- summarise(counts,X = sum( (O-E)^2/E ),pvalue=1-pchisq(X,df=10-1-2))
-flextable(chi)
+chi
 ```
 
 Vi förkastar **inte** nollhypotesen eftersom p-värdet är så högt (69%).
 
-```{r}
-masks %>% pivot_longer(cols=c("mask_coarse","mask_fine","mask_coarse","no_mask_coarse","no_mask_fine"),names_to="type",values_to="viralcpy") %>%
-  filter(type=="no_mask_fine") %>% 
-  ggplot(aes(x=log10(viralcpy+1))) +
-  geom_histogram(bins=10) +
-  facet_wrap(vars(type))
-```
-
 # Enkel och multipel linjär regression
 
-Läs översiktligt [kapitel 11](https://mathstat.slu.edu/~speegle/_book/SimpleReg.html#SimpleReg) i
+Läs översiktligt 
+[kapitel 11](https://mathstat.slu.edu/~speegle/_book/SimpleReg.html#SimpleReg) 
+i
 PSD om enkel linjär regression fram till 11.7. Gör en av uppgifterna
 11.18 och 11.39. Läs översiktligt igenom kapitel 13 och gör en av
 uppgifterna 13.4 och 13.8
@@ -232,34 +198,56 @@ package.
     
 Presentera data
 ```{r}
-starwars %>% sample_n(10)
+starwars %>% filter(!is.na(mass)) -> sw
 ```
 
 En scatterplot av vikt mot längd.
 ```{r}
-starwars %>% 
+sw %>% 
+  ggplot(aes(x=height,y=mass)) +
+  geom_point() +
+  geom_smooth(formula=y~x,method="lm")
+```
+Använder `lm`för att beräkna regressionsmodellen
+
+```{r}
+lm_starwars <- lm(mass~height,data=sw)
+summary(lm_starwars)
+```
+```{r}
+plot(lm_starwars,1)
+```
+```{r}
+plot(lm_starwars,2)
+```
+
+Jabba är outlier
+
+```{r}
+sw[15,]
+```
+
+```{r}
+sw2 <- filter(sw,mass < 1000)
+sw2 %>% 
   ggplot(aes(x=height,y=mass)) +
   geom_point() +
   geom_smooth(formula=y~x,method="lm")
 ```
 
-```{r}
-lm_starwars <- lm(mass~height,data=starwars)
-summary(lm_starwars)
-```
-```{r}
-```
-
 
 ```{r}
-starwars %>% mutate(res=rr)
-filter((!is.na(height))&!is.na(mass)) %>%
+lm2 <- lm(mass~height,data=sw2)
+summary(lm2)
 ```
 
-Residualplott
 ```{r}
-grid.arrange(plot(lm_starwars))
+plot(lm2,1)
 ```
+```{r}
+plot(lm2,2)
+```
+
 
 
 11.39 Icke-linjär modell
@@ -300,6 +288,8 @@ variables. Which variables are significant at the 0.05 level?
 
 Drop any variables that are not significant and make a new linear model.
 How does this change the adjusted $R^2$
+
+
 
 13.8
 
